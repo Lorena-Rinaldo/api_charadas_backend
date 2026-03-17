@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import random
 
 charadas = [
@@ -25,6 +25,21 @@ def get_charadas():
 def get_charadas_random():
     charada = random.choice(charadas)
     return jsonify(charada), 200
+
+# Rota 3 - Método POST - Cadastro de novas charadas
+@app.route("/charadas", methods=['POST'])
+def post_charadas():
+    dados = request.get_json()
+    if not dados or "pergunta" not in dados or "resposta" not in dados:
+        return jsonify({"error":"Dados inválidos"}), 400
+    nova_charada = {
+        "pergunta": dados["pergunta"],
+        "resposta": dados["resposta"]
+    }
+    
+    charadas.append(nova_charada)
+    return jsonify({"message": "Charada criada com sucesso!", "charada": nova_charada}), 201
+        
 
 if __name__ == "__main__":
     app.run(debug=True)
