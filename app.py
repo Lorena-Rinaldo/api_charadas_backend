@@ -12,22 +12,19 @@ app = Flask(__name__)
 
 # ----- MÉTODOS PÚBLICOS -----
 
+
 # Rota PRINCIPAL - Apresentação da API
 @app.route("/", methods=["GET"])
 def root():
-    return jsonify({
-        "api": "charadas",
-        "version" : "1.0",
-        "author" : "Lorena Rinaldo"
-    })
+    return jsonify({"api": "charadas", "version": "1.0", "author": "Lorena Rinaldo"})
 
 
 # Rota 1 - Método GET - Todas as charadas
 @app.route("/charadas", methods=["GET"])
 def get_charadas():
-    charadas = [] #Lista vazia
-    lista = db.collection('charadas').stream() #stream lista todos os dados
-    
+    charadas = []  # Lista vazia
+    lista = db.collection("charadas").stream()  # stream lista todos os dados
+
     # Tranforma objeto do firestore em dicionário python
     for item in lista:
         charadas.append(item.to_dict())
@@ -37,17 +34,28 @@ def get_charadas():
 # Rota 2 - Método GET - Charada aleatória
 @app.route("/charadas/aleatoria", methods=["GET"])
 def get_charadas_random():
-    charadas = [] #Lista vazia
-    lista = db.collection('charadas').stream() 
-    
+    charadas = []  # Lista vazia
+    lista = db.collection("charadas").stream()
+
     for item in lista:
         charadas.append(item.to_dict())
     return jsonify(random.choice(charadas)), 200
 
 
+# Rota 3 - Método GET - Retorna charada pelo id
+@app.route("/charadas/<int:id>", methods=["GET"])
+def get_charada_by_id(id):
+    lista = db.collection("charadas").where('id', '==', id).stream()
+    
+    for item in lista:
+        return jsonify(item.to_dict()), 200
+    return jsonify({"error": "Charada não encontrada"}), 404
+
+
 # ----- MÉTODOS PRIVADOS -----
 
-# Rota 3 - Método POST - Cadastro de novas charadas
+
+# Rota 4 - Método POST - Cadastro de novas charadas
 @app.route("/charadas", methods=["POST"])
 def post_charadas():
     dados = request.get_json()
