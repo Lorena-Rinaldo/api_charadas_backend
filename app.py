@@ -34,11 +34,15 @@ def get_charadas():
     return jsonify(charadas), 200
 
 
-# Rota 2 - Método GET - Charadas aleatórias
-@app.route("/charadas/aleatorias", methods=["GET"])
+# Rota 2 - Método GET - Charada aleatória
+@app.route("/charadas/aleatoria", methods=["GET"])
 def get_charadas_random():
-    charada = random.choice()
-    return jsonify(charada), 200
+    charadas = [] #Lista vazia
+    lista = db.collection('charadas').stream() 
+    
+    for item in lista:
+        charadas.append(item.to_dict())
+    return jsonify(random.choice(charadas)), 200
 
 
 # ----- MÉTODOS PRIVADOS -----
