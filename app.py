@@ -11,6 +11,8 @@ charadas = [
 
 app = Flask(__name__)
 
+# ----- MÉTODOS PÚBLICOS -----
+
 @app.route('/', methods=['GET'])
 def root():
     return "API TÁ ON"
@@ -25,6 +27,8 @@ def get_charadas():
 def get_charadas_random():
     charada = random.choice(charadas)
     return jsonify(charada), 200
+
+# ----- MÉTODOS PRIVADOS -----
 
 # Rota 3 - Método POST - Cadastro de novas charadas
 @app.route("/charadas", methods=['POST'])
