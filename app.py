@@ -132,11 +132,42 @@ def charadas_put(id):
         # Pega o primeiro (e único) documento da lista
         for doc in docs:
             doc_ref = db.collection("charadas").document(doc.id)
-            
+
             doc_ref.update(
                 {"pergunta": dados["pergunta"], "resposta": dados["resposta"]}
             )
-            
+
+        return (jsonify({"message": "Charada alterada com sucesso!"}), 200)
+    except:
+        return jsonify({"error": "Dados inválidos ou incompletos"}), 400
+
+
+# Rota 6 - Método PATCH - Alteração parcial(pergunta OU resposta)
+@app.route("/charadas/<int:id>", methods=["PATCH"])
+def charadas_patch(id):
+    if not validar_token():
+        return jsonify({"error": "Acesso negado!"}), 401
+
+    dados = request.get_json()
+
+    # PATCH - Pode ter SÓ a PERGUNTA ou SÓ a RESPOSTA
+    if not dados or "pergunta" not in dados or "resposta" not in dados:
+        return jsonify({"error": "Dados inválidos ou incompletos"}), 400
+
+    try:
+        docs = db.collection("charadas").where("id", "==", id).limit(1).get()
+        if not docs:
+            return jsonify({"error": "Charada não encontrada"}), 404
+
+        # Pega o primeiro (e único) documento da lista
+        for doc in docs:
+            doc_ref = db.collection("charadas").document(doc.id)
+
+            if dados["pergunta"]:
+                doc_ref.update({"pergunta": dados["pergunta"]})
+            if dados["resposta"]:
+                doc_ref.update({"resposta": dados["resposta"]})
+
         return (jsonify({"message": "Charada alterada com sucesso!"}), 200)
     except:
         return jsonify({"error": "Dados inválidos ou incompletos"}), 400
