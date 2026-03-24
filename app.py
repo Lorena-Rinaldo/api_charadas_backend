@@ -84,7 +84,7 @@ def post_charadas():
     dados = request.get_json()
     if not dados or "pergunta" not in dados or "resposta" not in dados:
         return jsonify({"error": "Dados inválidos ou incompletos"}), 400
-    
+
     try:
         # Busca pelo contador de id
         contador_ref = db.collection("contador").document("controle_id")
@@ -99,19 +99,47 @@ def post_charadas():
 
         # Cadastrar nova charada
         db.collection("charadas").add(
-            {"id": novo_id, "pergunta": dados["pergunta"], "resposta": dados["resposta"]}
+            {
+                "id": novo_id,
+                "pergunta": dados["pergunta"],
+                "resposta": dados["resposta"],
+            }
         )
 
-        return (
-            jsonify({"message": "Charada criada com sucesso!"}),
-            201
-        )
-        
+        return (jsonify({"message": "Charada criada com sucesso!"}), 201)
+
     except:
-        return (
-            jsonify({"error": "Falha no envio do arquivo"}),
-            400
-        )
+        return (jsonify({"error": "Falha no envio do arquivo"}), 400)
+
+
+# Rota 5 - Método PUT - Alteração total
+@app.route("/charadas/<int:id>", methods=["PUT"])
+def charadas_put(id):
+    if not validar_token():
+        return jsonify({"error": "Acesso negado!"}), 401
+
+    dados = request.get_json()
+
+    # PUT - É necessário enviar PERGUNTA e resposta
+    if not dados or "pergunta" not in dados or "resposta" not in dados:
+        return jsonify({"error": "Dados inválidos ou incompletos"}), 400
+
+    try:
+        docs = db.collection("charadas").where("id", "==", id).limit(1).get()
+        if not docs:
+            return jsonify({"error": "Charada não encontrada"}), 404
+
+        # Pega o primeiro (e único) documento da lista
+        for doc in docs:
+            doc_ref = db.collection("charadas").document(doc.id)
+            
+            doc_ref.update(
+                {"pergunta": dados["pergunta"], "resposta": dados["resposta"]}
+            )
+            
+        return (jsonify({"message": "Charada alterada com sucesso!"}), 200)
+    except:
+        return jsonify({"error": "Dados inválidos ou incompletos"}), 400
 
 
 if __name__ == "__main__":
