@@ -160,20 +160,37 @@ def charadas_patch(id):
             return jsonify({"error": "Charada não encontrada"}), 404
 
         doc_ref = db.collection("charadas").document(docs[0].id)
-        
+
         update_charada = {}
 
         if "pergunta" in dados:
             update_charada["pergunta"] = dados["pergunta"]
         if "resposta" in dados:
             update_charada["resposta"] = dados["resposta"]
-            
-        #Atualiza o Firestore
+
+        # Atualiza o Firestore
         doc_ref.update(update_charada)
 
         return (jsonify({"message": "Charada alterada com sucesso!"}), 200)
     except:
         return jsonify({"error": "Dados inválidos ou incompletos"}), 400
+
+
+# Rota 7 - Método DELETE - Deletar charadas
+@app.route("/charadas/<int:id>", methods=["DELETE"])
+def charadas_delete(id):
+    if not validar_token():
+        return jsonify({"error": "Acesso negado!"}), 401
+
+    docs = db.collection("charadas").where("id", "==", id).limit(1).get()
+
+    if not docs:
+        return jsonify({"error": "Charada não encontrada"}), 404
+
+    doc_ref = db.collection("charadas").document(docs[0].id)
+    doc_ref.delete()
+    
+    return (jsonify({"message": "Charada deletada com sucesso!"}), 200)
 
 
 if __name__ == "__main__":
