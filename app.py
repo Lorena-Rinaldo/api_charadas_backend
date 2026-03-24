@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 import random
 import firebase_admin
 from firebase_admin import credentials, firestore
+from dotenv import load_dotenv
+import os
 
 # Carrega as credenciais do Firebase
 cred = credentials.Certificate("firebase.json")
@@ -9,6 +11,24 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 app = Flask(__name__)
+
+# 1. Carrega as variáveis do arquivo .env
+load_dotenv()
+
+# 2. Captura o valor da variável
+TOKEN_API = os.getenv("TOKEN_API")
+
+
+if not TOKEN_API:
+    raise ValueError("A variável TOKEN_API não foi encontrada no arquivo .env!")
+
+
+def validar_token():
+    auth = request.headers.get("Authorization")
+    if auth == f"Bearer {TOKEN_API}":
+        return True
+    return False
+
 
 # ----- MÉTODOS PÚBLICOS -----
 
@@ -45,8 +65,8 @@ def get_charadas_random():
 # Rota 3 - Método GET - Retorna charada pelo id
 @app.route("/charadas/<int:id>", methods=["GET"])
 def get_charada_by_id(id):
-    lista = db.collection("charadas").where('id', '==', id).stream()
-    
+    lista = db.collection("charadas").where("id", "==", id).stream()
+
     for item in lista:
         return jsonify(item.to_dict()), 200
     return jsonify({"error": "Charada não encontrada"}), 404
@@ -58,16 +78,40 @@ def get_charada_by_id(id):
 # Rota 4 - Método POST - Cadastro de novas charadas
 @app.route("/charadas", methods=["POST"])
 def post_charadas():
+    if not validar_token():
+        return jsonify({"error": "Acesso negado!"}), 401
+
     dados = request.get_json()
     if not dados or "pergunta" not in dados or "resposta" not in dados:
-        return jsonify({"error": "Dados inválidos"}), 400
-    nova_charada = {"pergunta": dados["pergunta"], "resposta": dados["resposta"]}
+        return jsonify({"error": "Dados inválidos ou incompletos"}), 400
+    
+    try:
+        # Busca pelo contador de id
+        contador_ref = db.collection("contador").document("controle_id")
+        contador_doc = contador_ref.get()
+        ultimo_id = contador_doc.to_dict().get("ultimo_id")
 
-    # .append(nova_charada)
-    return (
-        jsonify({"message": "Charada criada com sucesso!", "charada": nova_charada}),
-        201,
-    )
+        # Somar 1 ao último id
+        novo_id = ultimo_id + 1
+
+        # Atualiza o id do contador do firebase
+        contador_ref.update({"ultimo_id": novo_id})
+
+        # Cadastrar nova charada
+        db.collection("charadas").add(
+            {"id": novo_id, "pergunta": dados["pergunta"], "resposta": dados["resposta"]}
+        )
+
+        return (
+            jsonify({"message": "Charada criada com sucesso!"}),
+            201
+        )
+        
+    except:
+        return (
+            jsonify({"error": "Falha no envio do arquivo"}),
+            400
+        )
 
 
 if __name__ == "__main__":
