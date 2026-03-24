@@ -151,22 +151,25 @@ def charadas_patch(id):
     dados = request.get_json()
 
     # PATCH - Pode ter SÓ a PERGUNTA ou SÓ a RESPOSTA
-    if not dados or "pergunta" not in dados or "resposta" not in dados:
-        return jsonify({"error": "Dados inválidos ou incompletos"}), 400
+    if not dados or ("pergunta" not in dados and "resposta" not in dados):
+        return jsonify({"error": "Dados inválidos!"}), 400
 
     try:
         docs = db.collection("charadas").where("id", "==", id).limit(1).get()
         if not docs:
             return jsonify({"error": "Charada não encontrada"}), 404
 
-        # Pega o primeiro (e único) documento da lista
-        for doc in docs:
-            doc_ref = db.collection("charadas").document(doc.id)
+        doc_ref = db.collection("charadas").document(docs[0].id)
+        
+        update_charada = {}
 
-            if dados["pergunta"]:
-                doc_ref.update({"pergunta": dados["pergunta"]})
-            if dados["resposta"]:
-                doc_ref.update({"resposta": dados["resposta"]})
+        if "pergunta" in dados:
+            update_charada["pergunta"] = dados["pergunta"]
+        if "resposta" in dados:
+            update_charada["resposta"] = dados["resposta"]
+            
+        #Atualiza o Firestore
+        doc_ref.update(update_charada)
 
         return (jsonify({"message": "Charada alterada com sucesso!"}), 200)
     except:
