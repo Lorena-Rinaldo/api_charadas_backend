@@ -194,9 +194,15 @@ def charadas_delete(id):
 
 
 # ----- ROTAS DE TRATAMENTO DE ERRO -----
+
+
 @app.errorhandler(404)
 def error404(error):
     return jsonify({"error": "URL não encontrada"}), 404
+
+@app.errorhandler(500)
+def error500(error):
+    return jsonify({"error": "Servidor interno com falhas. Tente mais tarde!"}), 500
 
 
 if __name__ == "__main__":
