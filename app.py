@@ -189,8 +189,14 @@ def charadas_delete(id):
 
     doc_ref = db.collection("charadas").document(docs[0].id)
     doc_ref.delete()
-    
+
     return (jsonify({"message": "Charada deletada com sucesso!"}), 200)
+
+
+# ----- ROTAS DE TRATAMENTO DE ERRO -----
+@app.errorhandler(404)
+def error404(error):
+    return jsonify({"error": "URL não encontrada"}), 404
 
 
 if __name__ == "__main__":
