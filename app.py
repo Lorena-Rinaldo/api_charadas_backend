@@ -4,30 +4,20 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
 import os
+from auth import token_obrigatorio, gerar_token
 
 # Carrega as credenciais do Firebase
 cred = credentials.Certificate("firebase.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-app = Flask(__name__)
-
-# 1. Carrega as variáveis do arquivo .env
 load_dotenv()
 
-# 2. Captura o valor da variável
-TOKEN_API = os.getenv("TOKEN_API")
+app = Flask(__name__)
 
-
-if not TOKEN_API:
-    raise ValueError("A variável TOKEN_API não foi encontrada no arquivo .env!")
-
-
-def validar_token():
-    auth = request.headers.get("Authorization")
-    if auth == f"Bearer {TOKEN_API}":
-        return True
-    return False
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+ADM_USUARIO = os.getenv("ADM_USUARIO")
+ADM_SENHA = os.getenv("ADM_SENHA")
 
 
 # ----- MÉTODOS PÚBLICOS -----
@@ -39,11 +29,35 @@ def root():
     return jsonify({"api": "charadas", "version": "1.0", "author": "Lorena Rinaldo"})
 
 
+# Rota LOGIN
+@app.route("/login", methods=["POST"])
+def login():
+    dados = request.get_json()
+    if not dados:
+        return jsonify({"error": "Envie os dados para login"}), 400
+
+    usuario = dados.get("usuario")
+    senha = dados.get("senha")
+
+    if not usuario or not senha:
+        return jsonify({"error": "Usuário e senha são obrigatórios!!"}), 400
+
+    if usuario == ADM_USUARIO and senha == ADM_SENHA:
+        token = gerar_token(usuario)
+        return jsonify({"message": "Login realizado com sucesso", "token": token}), 200
+
+    return jsonify({"error": "Usuário e/ou senha inválidos"}), 401
+
+
 # Rota 1 - Método GET - Todas as charadas
 @app.route("/charadas", methods=["GET"])
 def get_charadas():
+    # Padrão limite de 20
+    limite = request.args.get('limite', default=20, type=int)
+    
     charadas = []  # Lista vazia
-    lista = db.collection("charadas").stream()  # stream lista todos os dados
+    
+    lista = db.collection("charadas").limit(limite).stream()  # stream lista todos os dados
 
     # Tranforma objeto do firestore em dicionário python
     for item in lista:
@@ -77,9 +91,8 @@ def get_charada_by_id(id):
 
 # Rota 4 - Método POST - Cadastro de novas charadas
 @app.route("/charadas", methods=["POST"])
+@token_obrigatorio
 def post_charadas():
-    if not validar_token():
-        return jsonify({"error": "Acesso negado!"}), 401
 
     dados = request.get_json()
     if not dados or "pergunta" not in dados or "resposta" not in dados:
@@ -114,9 +127,8 @@ def post_charadas():
 
 # Rota 5 - Método PUT - Alteração total
 @app.route("/charadas/<int:id>", methods=["PUT"])
+@token_obrigatorio
 def charadas_put(id):
-    if not validar_token():
-        return jsonify({"error": "Acesso negado!"}), 401
 
     dados = request.get_json()
 
@@ -144,9 +156,8 @@ def charadas_put(id):
 
 # Rota 6 - Método PATCH - Alteração parcial(pergunta OU resposta)
 @app.route("/charadas/<int:id>", methods=["PATCH"])
+@token_obrigatorio
 def charadas_patch(id):
-    if not validar_token():
-        return jsonify({"error": "Acesso negado!"}), 401
 
     dados = request.get_json()
 
@@ -178,9 +189,8 @@ def charadas_patch(id):
 
 # Rota 7 - Método DELETE - Deletar charadas
 @app.route("/charadas/<int:id>", methods=["DELETE"])
+@token_obrigatorio
 def charadas_delete(id):
-    if not validar_token():
-        return jsonify({"error": "Acesso negado!"}), 401
 
     docs = db.collection("charadas").where("id", "==", id).limit(1).get()
 
@@ -199,6 +209,7 @@ def charadas_delete(id):
 @app.errorhandler(404)
 def error404(error):
     return jsonify({"error": "URL não encontrada"}), 404
+
 
 @app.errorhandler(500)
 def error500(error):
