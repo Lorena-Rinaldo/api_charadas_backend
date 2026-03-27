@@ -52,8 +52,8 @@ def login():
 # Rota 1 - Método GET - Todas as charadas
 @app.route("/charadas", methods=["GET"])
 def get_charadas():
-    # Padrão limite de 20
-    limite = request.args.get('limite', default=20, type=int)
+    # Padrão limite de 50
+    limite = request.args.get('limite', default=50, type=int)
     
     charadas = []  # Lista vazia
     
