@@ -1,3 +1,4 @@
 /docs/*.md
 /firebase.json
 .env
+__pycache__
