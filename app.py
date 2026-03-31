@@ -4,11 +4,18 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
 import os
+import json
 from auth import token_obrigatorio, gerar_token
 from flask_cors import CORS
 
-# Carrega as credenciais do Firebase
-cred = credentials.Certificate("firebase.json")
+if os.getenv("VERCEL"):
+    # online na vercel
+    cred = credentials.Certificate(json.loads(os.getenv("FIREBASE_CREDENTIALS")))
+else:
+    # localmente
+    cred = credentials.Certificate("firebase.json")
+
+# Carrega as credenciais do Firebase localmente
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -55,11 +62,13 @@ def login():
 @app.route("/charadas", methods=["GET"])
 def get_charadas():
     # Padrão limite de 50
-    limite = request.args.get('limite', default=50, type=int)
-    
+    limite = request.args.get("limite", default=50, type=int)
+
     charadas = []  # Lista vazia
-    
-    lista = db.collection("charadas").limit(limite).stream()  # stream lista todos os dados
+
+    lista = (
+        db.collection("charadas").limit(limite).stream()
+    )  # stream lista todos os dados
 
     # Tranforma objeto do firestore em dicionário python
     for item in lista:
