@@ -5,6 +5,7 @@ from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
 import os
 from auth import token_obrigatorio, gerar_token
+from flask_cors import CORS
 
 # Carrega as credenciais do Firebase
 cred = credentials.Certificate("firebase.json")
@@ -16,6 +17,7 @@ load_dotenv()
 app = Flask(__name__)
 
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+CORS(app, origins="*")
 ADM_USUARIO = os.getenv("ADM_USUARIO")
 ADM_SENHA = os.getenv("ADM_SENHA")
 
