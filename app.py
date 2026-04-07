@@ -9,6 +9,8 @@ from auth import token_obrigatorio, gerar_token
 from flask_cors import CORS
 from flasgger import Swagger 
 
+load_dotenv()
+
 if os.getenv("VERCEL"):
     # online na vercel
     cred = credentials.Certificate(json.loads(os.getenv("FIREBASE_CREDENTIALS")))
@@ -19,8 +21,6 @@ else:
 # Carrega as credenciais do Firebase localmente
 firebase_admin.initialize_app(cred)
 db = firestore.client()
-
-load_dotenv()
 
 app = Flask(__name__)
 

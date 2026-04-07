@@ -1,0 +1,234 @@
+openapi: 3.0.0
+info:
+  title: API de Charadas
+  description: API para gerenciamento de charadas com autenticação via token.
+  version: "1.0.0"
+  contact:
+    name: Lorena Rinaldo
+
+servers:
+  - url: http://localhost:5000
+    description: Servidor local de desenvolvimento
+  - url: https://api-charadas-backend-jet.vercel.app
+    description: Servidor Vercel
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Insira o token JWT gerado na rota /login para acessar métodos privados."
+
+  schemas:
+    Charada:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        pergunta:
+          type: string
+          example: "O que é, o que é? Cai em pé e corre deitado."
+        resposta:
+          type: string
+          example: "A chuva"
+    
+    Erro:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Mensagem de erro explicativa"
+
+paths:
+  /:
+    get:
+      summary: Apresentação da API
+      tags:
+        - Público
+      responses:
+        '200':
+          description: Informações básicas da API
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api: { type: string, example: "charadas" }
+                  version: { type: string, example: "1.0" }
+                  author: { type: string, example: "Lorena Rinaldo" }
+
+  /login:
+    post:
+      summary: Realiza login para obter o token de acesso
+      tags:
+        - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - usuario
+                - senha
+              properties:
+                usuario:
+                  type: string
+                  example: "admin"
+                senha:
+                  type: string
+                  example: "123456"
+      responses:
+        '200':
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "Login realizado com sucesso" }
+                  token: { type: string, example: "eyJhbGciOiJIUzI1NiIsInR..." }
+        '401':
+          description: Usuário ou senha inválidos
+        '400':
+          description: Dados insuficientes
+
+  /charadas:
+    get:
+      summary: Retorna a lista de todas as charadas
+      tags:
+        - Charadas (Público)
+      parameters:
+        - name: limite
+          in: query
+          description: Quantidade máxima de charadas a retornar
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Lista de charadas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Charada'
+
+    post:
+      summary: Cadastra uma nova charada
+      tags:
+        - Charadas (Privado)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pergunta
+                - resposta
+              properties:
+                pergunta: { type: string }
+                resposta: { type: string }
+      responses:
+        '201':
+          description: Charada criada com sucesso
+        '401':
+          description: Token ausente ou inválido
+
+  /charadas/aleatoria:
+    get:
+      summary: Retorna uma charada aleatória
+      tags:
+        - Charadas (Público)
+      responses:
+        '200':
+          description: Uma charada selecionada aleatoriamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Charada'
+
+  /charadas/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID da charada
+    
+    get:
+      summary: Busca uma charada pelo ID
+      tags:
+        - Charadas (Público)
+      responses:
+        '200':
+          description: Charada encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Charada'
+        '404':
+          description: Charada não encontrada
+
+    put:
+      summary: Altera todos os campos de uma charada existente
+      tags:
+        - Charadas (Privado)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pergunta
+                - resposta
+              properties:
+                pergunta: { type: string }
+                resposta: { type: string }
+      responses:
+        '200':
+          description: Charada alterada com sucesso
+        '404':
+          description: Charada não encontrada
+
+    patch:
+      summary: Altera parcialmente uma charada (pergunta ou resposta)
+      tags:
+        - Charadas (Privado)
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pergunta: { type: string }
+                resposta: { type: string }
+      responses:
+        '200':
+          description: Charada atualizada com sucesso
+        '404':
+          description: Charada não encontrada
+
+    delete:
+      summary: Exclui uma charada
+      tags:
+        - Charadas (Privado)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Charada deletada com sucesso
+        '404':
+          description: Charada não encontrada
