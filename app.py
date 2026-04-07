@@ -7,6 +7,7 @@ import os
 import json
 from auth import token_obrigatorio, gerar_token
 from flask_cors import CORS
+from flasgger import Swagger 
 
 if os.getenv("VERCEL"):
     # online na vercel
