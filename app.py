@@ -24,6 +24,14 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# VERSÃO DA OPENAPI
+app.config['SWAGGER'] = {
+    'openapi':'3.0.0'
+}
+
+# CHAMAR O OPENAPI PARA O CÓDIGO
+swagger = Swagger(app, template_file='openapi.yaml')
+
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 CORS(app, origins="*")
 ADM_USUARIO = os.getenv("ADM_USUARIO")
